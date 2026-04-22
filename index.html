@@ -691,8 +691,20 @@ body{background:#080808;color:#bbb;font-family:'IBM Plex Mono',monospace;-webkit
     <h3 id="modalTitle">Konfirmasi</h3>
     <p id="modalMsg">Yakin?</p>
     <div class="modal-btns">
-      <button class="btn-cancel" onclick="closeConfirm()">Batal</button>
-      <button class="btn-ok"     onclick="runConfirm()">Hapus</button>
+      <button class="btn-cancel" onclick="closeConfirm()">No</button>
+      <button class="btn-ok"     onclick="runConfirm()">Yes</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGOUT MODAL -->
+<div class="modal-bg" id="logoutBg">
+  <div class="modal-box">
+    <h3>Keluar Akun</h3>
+    <p>Yakin Mau Keluar Dari Akun Ini?</p>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeLogout()">No</button>
+      <button class="btn-ok"     onclick="doLogout()">Yes</button>
     </div>
   </div>
 </div>
@@ -777,6 +789,13 @@ async function handleRegister(){
 }
 
 async function handleLogout(){
+  document.getElementById('logoutBg').classList.add('show');
+}
+function closeLogout(){document.getElementById('logoutBg').classList.remove('show');}
+async function doLogout(){
+  closeLogout();
+  const v=document.getElementById('mainVideo');
+  if(v){v.pause();v.muted=true;}
   await sb.auth.signOut();
   currentUserId=null;
   document.getElementById('capturesList').innerHTML='<div class="loading-box">Memuat data...</div>';
@@ -827,11 +846,20 @@ async function loadCaptures(){
 
 /* DELETE ONE */
 function confirmDeleteOne(id,token){
-  showConfirm('Hapus Capture',`Yakin hapus data ini? Tidak bisa dikembalikan.`,()=>deleteOne(id));
+  showConfirm('Hapus Capture','Yakin hapus data ini? Tidak bisa dikembalikan.',()=>deleteOne(id));
 }
 async function deleteOne(id){
-  const {error}=await sb.from('captures').delete().eq('id',id);
-  if(error){showToast('Gagal: '+error.message,'error');return;}
+  const {data:sess}=await sb.auth.getSession();
+  const token=sess?.session?.access_token;
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/captures?id=eq.${id}`,{
+    method:'DELETE',
+    headers:{
+      'apikey':SUPABASE_ANON_KEY,
+      'Authorization':`Bearer ${token}`,
+      'Content-Type':'application/json'
+    }
+  });
+  if(!res.ok){showToast('Gagal hapus: '+res.status,'error');return;}
   showToast('Data dihapus.','success');loadCaptures();
 }
 
@@ -840,8 +868,17 @@ function confirmClearAll(){
   showConfirm('Hapus Semua','Yakin hapus SEMUA data akun ini? Tidak bisa dikembalikan.',()=>clearAll());
 }
 async function clearAll(){
-  const {error}=await sb.from('captures').delete().eq('user_id',currentUserId);
-  if(error){showToast('Gagal: '+error.message,'error');return;}
+  const {data:sess}=await sb.auth.getSession();
+  const token=sess?.session?.access_token;
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/captures?user_id=eq.${currentUserId}`,{
+    method:'DELETE',
+    headers:{
+      'apikey':SUPABASE_ANON_KEY,
+      'Authorization':`Bearer ${token}`,
+      'Content-Type':'application/json'
+    }
+  });
+  if(!res.ok){showToast('Gagal hapus: '+res.status,'error');return;}
   showToast('Semua data dihapus.','success');loadCaptures();
 }
 
