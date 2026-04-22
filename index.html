@@ -192,7 +192,7 @@ body{background:#080808;color:#bbb;font-family:'IBM Plex Mono',monospace;-webkit
   justify-content:space-between;
   flex-shrink:0;
 }
-.topbar-left{display:flex;align-items:center;gap:12px;}
+.topbar-left{display:flex;align-items:center;gap:12px;min-width:0;flex:1;overflow:hidden;}
 .topbar-logo{width:28px;height:28px;border-radius:9px;object-fit:cover;border:1px solid #222;background:#181818;}
 .topbar-name{
   font-family:'Unbounded',sans-serif;
@@ -200,8 +200,11 @@ body{background:#080808;color:#bbb;font-family:'IBM Plex Mono',monospace;-webkit
   font-weight:900;
   color:#e0e0e0;
   letter-spacing:3px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
 }
-.topbar-right{display:flex;align-items:center;gap:8px;}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .user-pill{
   background:#151515;
   border:1px solid #1f1f1f;
@@ -520,12 +523,30 @@ body{background:#080808;color:#bbb;font-family:'IBM Plex Mono',monospace;-webkit
   border-radius:20px;
   overflow:hidden;
   flex-shrink:0;
+  position:relative;
 }
 .video-box video{
   width:100%;
   display:block;
   border-radius:20px;
 }
+.btn-mute{
+  position:absolute;
+  bottom:12px;
+  right:12px;
+  background:rgba(0,0,0,0.6);
+  border:1px solid #333;
+  border-radius:10px;
+  padding:6px 12px;
+  font-size:10px;
+  color:#aaa;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  cursor:pointer;
+  font-family:'IBM Plex Mono',monospace;
+  transition:all .2s;
+}
+.btn-mute:hover{background:rgba(0,0,0,0.8);color:#fff;}
 
 /* TOAST */
 .toast{
@@ -607,7 +628,8 @@ body{background:#080808;color:#bbb;font-family:'IBM Plex Mono',monospace;-webkit
 
   <!-- VIDEO BOX -->
   <div class="video-box">
-    <video src="https://files.catbox.moe/l7189v.mp4" autoplay loop muted playsinline></video>
+    <video id="mainVideo" src="https://files.catbox.moe/l7189v.mp4" autoplay loop muted playsinline></video>
+    <button class="btn-mute" id="muteBtn" onclick="toggleMute()">Suara Off</button>
   </div>
 
   <!-- TOP BAR BOX -->
@@ -617,7 +639,6 @@ body{background:#080808;color:#bbb;font-family:'IBM Plex Mono',monospace;-webkit
       <span class="topbar-name">ZAM-DEX</span>
     </div>
     <div class="topbar-right">
-      <div class="user-pill" id="userBadge"></div>
       <button class="btn-out" onclick="handleLogout()">Keluar</button>
     </div>
   </div>
@@ -630,6 +651,8 @@ body{background:#080808;color:#bbb;font-family:'IBM Plex Mono',monospace;-webkit
 
       <!-- INFO BOX -->
       <div class="info-box">
+        <div class="box-label">Akun</div>
+        <div class="user-pill" id="userBadge" style="margin-bottom:14px;max-width:100%;"></div>
         <div class="box-label">Total Tangkapan</div>
         <div class="count-num" id="captureNum">—</div>
         <div class="count-sub">data masuk</div>
@@ -688,8 +711,15 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentUserId = null;
 let confirmAction = null;
 
+/* MUTE TOGGLE */
+function toggleMute(){
+  const v=document.getElementById('mainVideo');
+  const btn=document.getElementById('muteBtn');
+  v.muted=!v.muted;
+  btn.textContent=v.muted?'Suara Off':'Suara On';
+}
+
 /* TOAST */
-function showToast(msg,type=''){
   const t=document.getElementById('toast');
   t.textContent=msg; t.className=`toast ${type} show`;
   setTimeout(()=>t.classList.remove('show'),3000);
